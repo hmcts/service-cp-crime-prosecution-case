@@ -12,7 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import uk.gov.hmcts.cp.config.AppPropertiesBackend;
-import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.caseUrnMapper.CaseMapperResponse;
+import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.caseurnmapper.CaseMapperResponse;
 
 import java.util.UUID;
 

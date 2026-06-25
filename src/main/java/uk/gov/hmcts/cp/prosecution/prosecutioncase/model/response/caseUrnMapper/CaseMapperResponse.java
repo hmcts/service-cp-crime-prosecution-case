@@ -1,4 +1,4 @@
-package uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.caseUrnMapper;
+package uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.caseurnmapper;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;

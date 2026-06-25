@@ -14,13 +14,13 @@ public class ProsecutionCaseService {
     private final ProsecutionCasefileClient casefileClient;
     private final ProsecutionCasefileMapper mapper;
 
-    public ProsecutionCaseService(ProsecutionCasefileClient casefileClient,
-                                  ProsecutionCasefileMapper mapper) {
+    public ProsecutionCaseService(final ProsecutionCasefileClient casefileClient,
+                                  final ProsecutionCasefileMapper mapper) {
         this.casefileClient = casefileClient;
         this.mapper = mapper;
     }
 
-    public ProsecutionCaseView getDefendants(UUID caseId) {
+    public ProsecutionCaseView getDefendants(final UUID caseId) {
         final CasefileResponse casefile = casefileClient.getCaseById(caseId);
         return mapper.toProsecutionCaseView(casefile);
     }
