@@ -13,6 +13,10 @@ plugins {
 group = 'uk.gov.hmcts.cp'
 version = System.getProperty('ARTEFACT_VERSION') ?: '0.0.999'
 
+configurations {
+  apiSpec
+}
+
 apply {
   from("$rootDir/gradle/repositories.gradle")
   from("$rootDir/gradle/java.gradle")
@@ -20,12 +24,15 @@ apply {
   from("$rootDir/gradle/pmd.gradle")
   from("$rootDir/gradle/test.gradle")
   from("$rootDir/gradle/jar.gradle")
+  from("$rootDir/gradle/apispec-validation.gradle")
 }
 
 // We MUST keep all dependencies in the build.gradle to allow dependabot to provide version updates
 // Sadly, dependabot does not track dependencies in the apply-from files
 dependencies {
-  apiSpec 'uk.gov.hmcts.cp:api-cp-crime-prosecution-case:1.0.0'
+  implementation 'uk.gov.hmcts.cp:api-cp-crime-prosecution-case:1.0.0'
+  compileOnly 'io.swagger.core.v3:swagger-annotations:2.2.52'
+  testCompileOnly 'io.swagger.core.v3:swagger-annotations:2.2.52'
 
   // Java core
   implementation 'net.logstash.logback:logstash-logback-encoder:9.0'
