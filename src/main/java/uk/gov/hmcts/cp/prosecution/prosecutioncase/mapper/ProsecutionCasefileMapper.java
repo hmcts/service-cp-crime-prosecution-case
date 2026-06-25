@@ -14,28 +14,26 @@ import java.util.UUID;
 @Component
 public class ProsecutionCasefileMapper {
 
-    public ProsecutionCaseView toProsecutionCaseView(CasefileResponse casefile) {
-        if (casefile == null || casefile.defendants() == null) {
-            return new ProsecutionCaseView(List.of());
-        }
-        final List<DefendantView> defendants = casefile.defendants().stream()
-                .map(d -> DefendantView.builder()
-                        .id(UUID.fromString(d.defendantId()))
-                        .name(fullName(d.personalInformation()))
-                        .offences(toOffenceViews(d.offences()))
-                        .build())
-                .toList();
+    public ProsecutionCaseView toProsecutionCaseView(final CasefileResponse casefile) {
+        final List<DefendantView> defendants = casefile == null || casefile.defendants() == null
+                ? List.of()
+                : casefile.defendants().stream()
+                        .map(d -> DefendantView.builder()
+                                .id(UUID.fromString(d.defendantId()))
+                                .name(fullName(d.personalInformation()))
+                                .offences(toOffenceViews(d.offences()))
+                                .build())
+                        .toList();
         return new ProsecutionCaseView(defendants);
     }
 
-    private String fullName(CasefileDefendant.PersonalInformation pi) {
-        if (pi == null) return null;
-        return (pi.firstName() + " " + pi.lastName()).strip();
+    private String fullName(final CasefileDefendant.PersonalInformation pi) {
+        return pi == null ? null : (pi.firstName() + " " + pi.lastName()).strip();
     }
 
-    private List<OffenceView> toOffenceViews(List<CasefileOffence> offences) {
-        if (offences == null) return List.of();
-        return offences.stream()
+    private List<OffenceView> toOffenceViews(final List<CasefileOffence> offences) {
+        final List<CasefileOffence> safe = offences == null ? List.of() : offences;
+        return safe.stream()
                 .map(o -> OffenceView.builder()
                         .id(UUID.fromString(o.offenceId()))
                         .code(o.offenceCode())

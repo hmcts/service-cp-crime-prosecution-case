@@ -3,7 +3,6 @@ package uk.gov.hmcts.cp.prosecution.prosecutioncase.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.cp.openapi.api.ProsecutionCasesApi;
@@ -28,7 +27,7 @@ public class ProsecutionCasefileController implements ProsecutionCasesApi {
     }
 
     @Override
-    public ResponseEntity<ProsecutionCaseView> getProsecutionCase(@PathVariable String caseURN) {
+    public ResponseEntity<ProsecutionCaseView> getProsecutionCase(final String caseURN) {
         final UUID caseId = caseUrnMapperService.getCaseId(validateCaseUrn(caseURN));
         return ResponseEntity.ok(prosecutionCaseService.getDefendants(caseId));
     }

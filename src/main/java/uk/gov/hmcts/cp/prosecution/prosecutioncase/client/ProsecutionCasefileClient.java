@@ -36,7 +36,7 @@ public class ProsecutionCasefileClient {
     }
 
     private HttpEntity<String> getRequestEntity() {
-        HttpHeaders headers = new HttpHeaders();
+        final HttpHeaders headers = new HttpHeaders();
         headers.set("Accept", ACCEPT_CASE);
         headers.add("CJSCPPUID", appProperties.getProsecutionCasefileCjscppuid());
         return new HttpEntity<>(headers);
