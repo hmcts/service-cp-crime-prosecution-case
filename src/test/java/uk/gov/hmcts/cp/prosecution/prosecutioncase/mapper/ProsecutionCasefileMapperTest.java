@@ -1,80 +1,88 @@
 package uk.gov.hmcts.cp.prosecution.prosecutioncase.mapper;
 
 import org.junit.jupiter.api.Test;
-import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.output.DefendantView;
+import uk.gov.hmcts.cp.openapi.model.ProsecutionCaseView;
 import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.casefile.CasefileDefendant;
 import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.casefile.CasefileOffence;
 import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.casefile.CasefileResponse;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ProsecutionCasefileMapperTest {
 
+    private static final UUID DEF_1 = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final UUID OFF_1 = UUID.fromString("00000000-0000-0000-0000-000000000011");
+    private static final UUID DEF_2 = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    private static final UUID OFF_2 = UUID.fromString("00000000-0000-0000-0000-000000000022");
+    private static final UUID DEF_3 = UUID.fromString("00000000-0000-0000-0000-000000000003");
+    private static final UUID DEF_4 = UUID.fromString("00000000-0000-0000-0000-000000000004");
+
     private final ProsecutionCasefileMapper mapper = new ProsecutionCasefileMapper();
 
     @Test
-    void toDefendantViews_maps_name_and_offences() {
-        CasefileOffence offence = new CasefileOffence("off-1", "TH68001", null, "Theft", null);
-        CasefileDefendant defendant = new CasefileDefendant("def-1",
+    void toProsecutionCaseView_maps_name_and_offences() {
+        CasefileOffence offence = new CasefileOffence(OFF_1.toString(), "TH68001", null, "Theft", null);
+        CasefileDefendant defendant = new CasefileDefendant(DEF_1.toString(),
                 new CasefileDefendant.PersonalInformation("Jane", "Doe"), List.of(offence));
         CasefileResponse casefile = new CasefileResponse("case-1", "22SW0001", null, null, List.of(defendant));
 
-        List<DefendantView> result = mapper.toDefendantViews(casefile);
+        ProsecutionCaseView result = mapper.toProsecutionCaseView(casefile);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).id()).isEqualTo("def-1");
-        assertThat(result.get(0).name()).isEqualTo("Jane Doe");
-        assertThat(result.get(0).offences()).hasSize(1);
-        assertThat(result.get(0).offences().get(0).id()).isEqualTo("off-1");
-        assertThat(result.get(0).offences().get(0).code()).isEqualTo("TH68001");
-        assertThat(result.get(0).offences().get(0).title()).isEqualTo("Theft");
-        assertThat(result.get(0).offences().get(0).status()).isEqualTo("Active");
+        assertThat(result.getDefendants()).hasSize(1);
+        assertThat(result.getDefendants().getFirst().getId()).isEqualTo(DEF_1);
+        assertThat(result.getDefendants().getFirst().getName()).isEqualTo("Jane Doe");
+        assertThat(result.getDefendants().getFirst().getOffences()).hasSize(1);
+        assertThat(result.getDefendants().getFirst().getOffences().getFirst().getId()).isEqualTo(OFF_1);
+        assertThat(result.getDefendants().getFirst().getOffences().getFirst().getCode()).isEqualTo("TH68001");
+        assertThat(result.getDefendants().getFirst().getOffences().getFirst().getTitle()).isEqualTo("Theft");
+        assertThat(result.getDefendants().getFirst().getOffences().getFirst().getStatus()).isEqualTo("Active");
     }
 
     @Test
-    void toDefendantViews_uses_offenceWording_when_title_is_null() {
-        CasefileOffence offence = new CasefileOffence("off-2", "AA00001", "Wording text", null, "Guilty");
-        CasefileDefendant defendant = new CasefileDefendant("def-2",
+    void toProsecutionCaseView_uses_offenceWording_when_title_is_null() {
+        CasefileOffence offence = new CasefileOffence(OFF_2.toString(), "AA00001", "Wording text", null, "Guilty");
+        CasefileDefendant defendant = new CasefileDefendant(DEF_2.toString(),
                 new CasefileDefendant.PersonalInformation("John", "Smith"), List.of(offence));
         CasefileResponse casefile = new CasefileResponse("case-2", "22SW0002", null, null, List.of(defendant));
 
-        List<DefendantView> result = mapper.toDefendantViews(casefile);
+        ProsecutionCaseView result = mapper.toProsecutionCaseView(casefile);
 
-        assertThat(result.get(0).offences().get(0).title()).isEqualTo("Wording text");
-        assertThat(result.get(0).offences().get(0).status()).isEqualTo("Guilty");
+        assertThat(result.getDefendants().getFirst().getOffences().getFirst().getTitle()).isEqualTo("Wording text");
+        assertThat(result.getDefendants().getFirst().getOffences().getFirst().getStatus()).isEqualTo("Guilty");
     }
 
     @Test
-    void toDefendantViews_returns_empty_list_when_casefile_is_null() {
-        assertThat(mapper.toDefendantViews(null)).isEmpty();
+    void toProsecutionCaseView_returns_empty_defendants_when_casefile_is_null() {
+        assertThat(mapper.toProsecutionCaseView(null).getDefendants()).isEmpty();
     }
 
     @Test
-    void toDefendantViews_returns_empty_list_when_defendants_is_null() {
+    void toProsecutionCaseView_returns_empty_defendants_when_defendants_is_null() {
         CasefileResponse casefile = new CasefileResponse("case-3", null, null, null, null);
-        assertThat(mapper.toDefendantViews(casefile)).isEmpty();
+        assertThat(mapper.toProsecutionCaseView(casefile).getDefendants()).isEmpty();
     }
 
     @Test
-    void toDefendantViews_returns_empty_offences_when_offences_is_null() {
-        CasefileDefendant defendant = new CasefileDefendant("def-3",
+    void toProsecutionCaseView_returns_empty_offences_when_offences_is_null() {
+        CasefileDefendant defendant = new CasefileDefendant(DEF_3.toString(),
                 new CasefileDefendant.PersonalInformation("Alice", "Brown"), null);
         CasefileResponse casefile = new CasefileResponse("case-4", null, null, null, List.of(defendant));
 
-        List<DefendantView> result = mapper.toDefendantViews(casefile);
+        ProsecutionCaseView result = mapper.toProsecutionCaseView(casefile);
 
-        assertThat(result.get(0).offences()).isEmpty();
+        assertThat(result.getDefendants().get(0).getOffences()).isEmpty();
     }
 
     @Test
-    void toDefendantViews_handles_null_personal_information() {
-        CasefileDefendant defendant = new CasefileDefendant("def-4", null, List.of());
+    void toProsecutionCaseView_handles_null_personal_information() {
+        CasefileDefendant defendant = new CasefileDefendant(DEF_4.toString(), null, List.of());
         CasefileResponse casefile = new CasefileResponse("case-5", null, null, null, List.of(defendant));
 
-        List<DefendantView> result = mapper.toDefendantViews(casefile);
+        ProsecutionCaseView result = mapper.toProsecutionCaseView(casefile);
 
-        assertThat(result.get(0).name()).isNull();
+        assertThat(result.getDefendants().get(0).getName()).isNull();
     }
 }

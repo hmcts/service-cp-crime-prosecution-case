@@ -20,7 +20,7 @@ public class CaseUrnMapperClient {
     private final AppPropertiesBackend appProperties;
     private final RestTemplate restTemplate;
 
-    public CaseUrnMapperClient(AppPropertiesBackend appProperties, RestTemplate restTemplate) {
+    public CaseUrnMapperClient(final AppPropertiesBackend appProperties, final RestTemplate restTemplate) {
         this.appProperties = appProperties;
         this.restTemplate = restTemplate;
     }

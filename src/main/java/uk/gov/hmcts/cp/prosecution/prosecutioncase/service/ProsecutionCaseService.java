@@ -1,12 +1,11 @@
 package uk.gov.hmcts.cp.prosecution.prosecutioncase.service;
 
 import org.springframework.stereotype.Service;
+import uk.gov.hmcts.cp.openapi.model.ProsecutionCaseView;
 import uk.gov.hmcts.cp.prosecution.prosecutioncase.client.ProsecutionCasefileClient;
 import uk.gov.hmcts.cp.prosecution.prosecutioncase.mapper.ProsecutionCasefileMapper;
-import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.output.DefendantView;
 import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.casefile.CasefileResponse;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -21,11 +20,8 @@ public class ProsecutionCaseService {
         this.mapper = mapper;
     }
 
-    public record DefendantsView(List<DefendantView> defendants) {}
-
-    public DefendantsView getDefendants(UUID caseId) {
-        CasefileResponse casefile = casefileClient.getCaseById(caseId);
-        List<DefendantView> defendants = mapper.toDefendantViews(casefile);
-        return new DefendantsView(defendants);
+    public ProsecutionCaseView getDefendants(UUID caseId) {
+        final CasefileResponse casefile = casefileClient.getCaseById(caseId);
+        return mapper.toProsecutionCaseView(casefile);
     }
 }

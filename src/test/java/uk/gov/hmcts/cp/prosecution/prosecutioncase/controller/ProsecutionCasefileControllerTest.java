@@ -7,8 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
-import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.output.DefendantView;
-import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.output.OffenceView;
+import uk.gov.hmcts.cp.openapi.model.DefendantView;
+import uk.gov.hmcts.cp.openapi.model.OffenceView;
+import uk.gov.hmcts.cp.openapi.model.ProsecutionCaseView;
 import uk.gov.hmcts.cp.prosecution.prosecutioncase.service.CaseUrnMapperService;
 import uk.gov.hmcts.cp.prosecution.prosecutioncase.service.ProsecutionCaseService;
 
@@ -23,6 +24,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(ProsecutionCasefileController.class)
 class ProsecutionCasefileControllerTest {
 
+    private static final UUID DEF_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final UUID OFF_ID = UUID.fromString("00000000-0000-0000-0000-000000000011");
+
     @Resource
     private MockMvc mockMvc;
 
@@ -35,18 +39,26 @@ class ProsecutionCasefileControllerTest {
     @Test
     void getCaseByUrn_returns_defendants_with_offences() throws Exception {
         UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000001");
-        ProsecutionCaseService.DefendantsView view = new ProsecutionCaseService.DefendantsView(List.of(
-                new DefendantView("def-1", "Jane Doe", List.of(
-                        new OffenceView("off-1", "TH68001", "Theft", "Active")))));
+        ProsecutionCaseView view = new ProsecutionCaseView(List.of(
+                DefendantView.builder()
+                        .id(DEF_ID)
+                        .name("Jane Doe")
+                        .offences(List.of(OffenceView.builder()
+                                .id(OFF_ID)
+                                .code("TH68001")
+                                .title("Theft")
+                                .status("Active")
+                                .build()))
+                        .build()));
 
         when(caseUrnMapperService.getCaseId("22SW0001")).thenReturn(caseId);
         when(prosecutionCaseService.getDefendants(caseId)).thenReturn(view);
 
         mockMvc.perform(get("/prosecution-case/cases/22SW0001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.defendants[0].id").value("def-1"))
+                .andExpect(jsonPath("$.defendants[0].id").value(DEF_ID.toString()))
                 .andExpect(jsonPath("$.defendants[0].name").value("Jane Doe"))
-                .andExpect(jsonPath("$.defendants[0].offences[0].id").value("off-1"))
+                .andExpect(jsonPath("$.defendants[0].offences[0].id").value(OFF_ID.toString()))
                 .andExpect(jsonPath("$.defendants[0].offences[0].code").value("TH68001"))
                 .andExpect(jsonPath("$.defendants[0].offences[0].title").value("Theft"))
                 .andExpect(jsonPath("$.defendants[0].offences[0].status").value("Active"));
@@ -86,7 +98,7 @@ class ProsecutionCasefileControllerTest {
         UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000002");
         when(caseUrnMapperService.getCaseId(urn)).thenReturn(caseId);
         when(prosecutionCaseService.getDefendants(caseId))
-                .thenReturn(new ProsecutionCaseService.DefendantsView(List.of()));
+                .thenReturn(new ProsecutionCaseView(List.of()));
 
         mockMvc.perform(get("/prosecution-case/cases/" + urn))
                 .andExpect(status().isOk());
@@ -97,7 +109,7 @@ class ProsecutionCasefileControllerTest {
         UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000003");
         when(caseUrnMapperService.getCaseId("A")).thenReturn(caseId);
         when(prosecutionCaseService.getDefendants(caseId))
-                .thenReturn(new ProsecutionCaseService.DefendantsView(List.of()));
+                .thenReturn(new ProsecutionCaseView(List.of()));
 
         mockMvc.perform(get("/prosecution-case/cases/A"))
                 .andExpect(status().isOk());

@@ -1,28 +1,31 @@
 package uk.gov.hmcts.cp.prosecution.prosecutioncase.mapper;
 
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.output.DefendantView;
-import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.output.OffenceView;
+import uk.gov.hmcts.cp.openapi.model.DefendantView;
+import uk.gov.hmcts.cp.openapi.model.OffenceView;
+import uk.gov.hmcts.cp.openapi.model.ProsecutionCaseView;
 import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.casefile.CasefileDefendant;
 import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.casefile.CasefileOffence;
 import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.casefile.CasefileResponse;
 
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class ProsecutionCasefileMapper {
 
-    public List<DefendantView> toDefendantViews(CasefileResponse casefile) {
+    public ProsecutionCaseView toProsecutionCaseView(CasefileResponse casefile) {
         if (casefile == null || casefile.defendants() == null) {
-            return List.of();
+            return new ProsecutionCaseView(List.of());
         }
-        return casefile.defendants().stream()
-                .map(d -> new DefendantView(
-                        d.defendantId(),
-                        fullName(d.personalInformation()),
-                        toOffenceViews(d.offences())
-                ))
+        final List<DefendantView> defendants = casefile.defendants().stream()
+                .map(d -> DefendantView.builder()
+                        .id(UUID.fromString(d.defendantId()))
+                        .name(fullName(d.personalInformation()))
+                        .offences(toOffenceViews(d.offences()))
+                        .build())
                 .toList();
+        return new ProsecutionCaseView(defendants);
     }
 
     private String fullName(CasefileDefendant.PersonalInformation pi) {
@@ -33,12 +36,12 @@ public class ProsecutionCasefileMapper {
     private List<OffenceView> toOffenceViews(List<CasefileOffence> offences) {
         if (offences == null) return List.of();
         return offences.stream()
-                .map(o -> new OffenceView(
-                        o.offenceId(),
-                        o.offenceCode(),
-                        o.offenceTitle() != null ? o.offenceTitle() : o.offenceWording(),
-                        o.plea() == null || o.plea().isBlank() ? "Active" : o.plea()
-                ))
+                .map(o -> OffenceView.builder()
+                        .id(UUID.fromString(o.offenceId()))
+                        .code(o.offenceCode())
+                        .title(o.offenceTitle() != null ? o.offenceTitle() : o.offenceWording())
+                        .status(o.plea() == null || o.plea().isBlank() ? "Active" : o.plea())
+                        .build())
                 .toList();
     }
 }

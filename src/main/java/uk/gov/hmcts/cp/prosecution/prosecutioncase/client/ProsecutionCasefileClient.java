@@ -18,13 +18,13 @@ public class ProsecutionCasefileClient {
     private final AppPropertiesBackend appProperties;
     private final RestTemplate restTemplate;
 
-    public ProsecutionCasefileClient(AppPropertiesBackend appProperties,
-                                     RestTemplate restTemplate) {
+    public ProsecutionCasefileClient(final AppPropertiesBackend appProperties,
+                                     final RestTemplate restTemplate) {
         this.appProperties = appProperties;
         this.restTemplate = restTemplate;
     }
 
-    public CasefileResponse getCaseById(UUID caseId) {
+    public CasefileResponse getCaseById(final UUID caseId) {
         final String url = String.format("%s%s/%s",
                 appProperties.getProsecutionCasefileUrl(),
                 appProperties.getProsecutionCasefilePath(),

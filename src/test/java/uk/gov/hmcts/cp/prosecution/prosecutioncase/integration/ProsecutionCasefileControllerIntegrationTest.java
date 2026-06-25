@@ -27,6 +27,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SuppressWarnings("PMD.UnitTestShouldIncludeAssert")
 class ProsecutionCasefileControllerIntegrationTest {
 
+    private static final UUID DEF_1 = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000001");
+    private static final UUID OFF_1 = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000001");
+    private static final UUID DEF_2 = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000002");
+    private static final UUID OFF_2 = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000002");
+    private static final UUID DEF_3 = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000003");
+    private static final UUID OFF_3 = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000003");
+    private static final UUID DEF_4 = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000004");
+    private static final UUID OFF_4 = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000004");
+
     @Resource
     private MockMvc mockMvc;
 
@@ -41,9 +50,9 @@ class ProsecutionCasefileControllerIntegrationTest {
         UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000001");
         CasefileResponse casefile = new CasefileResponse(caseId.toString(), "22SW0001", null, null,
                 List.of(new CasefileDefendant(
-                        "def-1",
+                        DEF_1.toString(),
                         new CasefileDefendant.PersonalInformation("Jane", "Doe"),
-                        List.of(new CasefileOffence("off-1", "TH68001", null, "Theft", null))
+                        List.of(new CasefileOffence(OFF_1.toString(), "TH68001", null, "Theft", null))
                 )));
 
         when(caseUrnMapperClient.getCaseId("22SW0001")).thenReturn(caseId);
@@ -51,9 +60,9 @@ class ProsecutionCasefileControllerIntegrationTest {
 
         mockMvc.perform(get("/prosecution-case/cases/22SW0001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.defendants[0].id").value("def-1"))
+                .andExpect(jsonPath("$.defendants[0].id").value(DEF_1.toString()))
                 .andExpect(jsonPath("$.defendants[0].name").value("Jane Doe"))
-                .andExpect(jsonPath("$.defendants[0].offences[0].id").value("off-1"))
+                .andExpect(jsonPath("$.defendants[0].offences[0].id").value(OFF_1.toString()))
                 .andExpect(jsonPath("$.defendants[0].offences[0].code").value("TH68001"))
                 .andExpect(jsonPath("$.defendants[0].offences[0].title").value("Theft"))
                 .andExpect(jsonPath("$.defendants[0].offences[0].status").value("Active"));
@@ -64,9 +73,9 @@ class ProsecutionCasefileControllerIntegrationTest {
         UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000002");
         CasefileResponse casefile = new CasefileResponse(caseId.toString(), "22SW0002", null, null,
                 List.of(new CasefileDefendant(
-                        "def-2",
+                        DEF_2.toString(),
                         new CasefileDefendant.PersonalInformation("John", "Smith"),
-                        List.of(new CasefileOffence("off-2", "TH68002", null, "Burglary", null))
+                        List.of(new CasefileOffence(OFF_2.toString(), "TH68002", null, "Burglary", null))
                 )));
 
         when(caseUrnMapperClient.getCaseId("22SW0002")).thenReturn(caseId);
@@ -82,9 +91,9 @@ class ProsecutionCasefileControllerIntegrationTest {
         UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000003");
         CasefileResponse casefile = new CasefileResponse(caseId.toString(), "22SW0003", null, null,
                 List.of(new CasefileDefendant(
-                        "def-3",
+                        DEF_3.toString(),
                         new CasefileDefendant.PersonalInformation("Alice", "Jones"),
-                        List.of(new CasefileOffence("off-3", "TH68003", null, "Theft", "Guilty"))
+                        List.of(new CasefileOffence(OFF_3.toString(), "TH68003", null, "Theft", "Guilty"))
                 )));
 
         when(caseUrnMapperClient.getCaseId("22SW0003")).thenReturn(caseId);
@@ -100,9 +109,9 @@ class ProsecutionCasefileControllerIntegrationTest {
         UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000004");
         CasefileResponse casefile = new CasefileResponse(caseId.toString(), "22SW0004", null, null,
                 List.of(new CasefileDefendant(
-                        "def-4",
+                        DEF_4.toString(),
                         new CasefileDefendant.PersonalInformation("Bob", "Brown"),
-                        List.of(new CasefileOffence("off-4", "TH68004", "Wording only", null, null))
+                        List.of(new CasefileOffence(OFF_4.toString(), "TH68004", "Wording only", null, null))
                 )));
 
         when(caseUrnMapperClient.getCaseId("22SW0004")).thenReturn(caseId);
