@@ -13,6 +13,10 @@ plugins {
 group = 'uk.gov.hmcts.cp'
 version = System.getProperty('ARTEFACT_VERSION') ?: '0.0.999'
 
+configurations {
+  apiSpec
+}
+
 apply {
   from("$rootDir/gradle/repositories.gradle")
   from("$rootDir/gradle/java.gradle")
@@ -20,6 +24,7 @@ apply {
   from("$rootDir/gradle/pmd.gradle")
   from("$rootDir/gradle/test.gradle")
   from("$rootDir/gradle/jar.gradle")
+  from("$rootDir/gradle/apispec-validation.gradle")
 }
 
 // We MUST keep all dependencies in the build.gradle to allow dependabot to provide version updates

@@ -23,3 +23,12 @@ management:
 logging:
   level:
     root: INFO
+
+prosecution-casefile-client:
+  url: ${CP_BACKEND_URL:http://localhost:8081}
+  path: /prosecutioncasefile-query-api/query/api/rest/prosecutioncasefile/cases
+  cjscppuid: ${CJSCPPUID:00000000-0000-0000-0000-000000000000}
+
+case-mapper-client:
+  url: ${AMP_BACKEND_URL:http://localhost:8081}
+  path: /urnmapper
