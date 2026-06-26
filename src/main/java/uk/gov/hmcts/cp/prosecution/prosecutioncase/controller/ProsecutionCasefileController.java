@@ -1,5 +1,6 @@
 package uk.gov.hmcts.cp.prosecution.prosecutioncase.controller;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,17 +15,12 @@ import java.util.UUID;
 
 @RestController
 @Slf4j
+@AllArgsConstructor
 public class ProsecutionCasefileController implements ProsecutionCasesApi {
 
     private static final String CASE_URN_REGEX = "^[0-9a-zA-Z]{1,30}$";
     private final CaseUrnMapperService caseUrnMapperService;
     private final ProsecutionCaseService prosecutionCaseService;
-
-    public ProsecutionCasefileController(final CaseUrnMapperService caseUrnMapperService,
-                                         final ProsecutionCaseService prosecutionCaseService) {
-        this.caseUrnMapperService = caseUrnMapperService;
-        this.prosecutionCaseService = prosecutionCaseService;
-    }
 
     @Override
     public ResponseEntity<ProsecutionCaseView> getProsecutionCase(final String caseURN) {

@@ -1,147 +1,167 @@
 package uk.gov.hmcts.cp.prosecution.prosecutioncase.integration;
 
-import jakarta.annotation.Resource;
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.server.ResponseStatusException;
-import uk.gov.hmcts.cp.prosecution.prosecutioncase.client.CaseUrnMapperClient;
-import uk.gov.hmcts.cp.prosecution.prosecutioncase.client.ProsecutionCasefileClient;
-import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.casefile.CasefileDefendant;
-import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.casefile.CasefileOffence;
-import uk.gov.hmcts.cp.prosecution.prosecutioncase.model.response.casefile.CasefileResponse;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
+import jakarta.annotation.Resource;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.cp.config.AppPropertiesBackend;
+
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.UUID;
 
-import static org.mockito.Mockito.when;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.http.MediaType;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@SuppressWarnings("PMD.UnitTestShouldIncludeAssert")
+@Slf4j
 class ProsecutionCasefileControllerIntegrationTest {
 
-    private static final UUID DEF_1 = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000001");
-    private static final UUID OFF_1 = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000001");
-    private static final UUID DEF_2 = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000002");
-    private static final UUID OFF_2 = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000002");
-    private static final UUID DEF_3 = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000003");
-    private static final UUID OFF_3 = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000003");
-    private static final UUID DEF_4 = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000004");
-    private static final UUID OFF_4 = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000004");
+    @Autowired
+    AppPropertiesBackend appProperties;
 
     @Resource
     private MockMvc mockMvc;
 
-    @MockitoBean
-    private ProsecutionCasefileClient prosecutionCasefileClient;
+    protected WireMockServer wireMockServer;
 
-    @MockitoBean
-    private CaseUrnMapperClient caseUrnMapperClient;
+    String caseUrn = "ABCD1234567";
+    UUID caseId = UUID.fromString("970fc69f-fbd4-4a83-baaf-ce8c10df1e51");
 
-    @Test
-    void getCaseByUrn_returns_full_defendant_view_through_real_mapper() throws Exception {
-        UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000001");
-        CasefileResponse casefile = new CasefileResponse(caseId.toString(), "22SW0001", null, null,
-                List.of(new CasefileDefendant(
-                        DEF_1.toString(),
-                        new CasefileDefendant.PersonalInformation("Jane", "Doe"),
-                        List.of(new CasefileOffence(OFF_1.toString(), "TH68001", null, "Theft", null))
-                )));
+    @BeforeEach
+    void beforeEach() {
+        wireMockServer = new WireMockServer(WireMockConfiguration.options().port(8081));
+        wireMockServer.start();
+        WireMock.configureFor("localhost", 8081);
+    }
 
-        when(caseUrnMapperClient.getCaseId("22SW0001")).thenReturn(caseId);
-        when(prosecutionCasefileClient.getCaseById(caseId)).thenReturn(casefile);
-
-        mockMvc.perform(get("/prosecution-case/cases/22SW0001"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.defendants[0].id").value(DEF_1.toString()))
-                .andExpect(jsonPath("$.defendants[0].name").value("Jane Doe"))
-                .andExpect(jsonPath("$.defendants[0].offences[0].id").value(OFF_1.toString()))
-                .andExpect(jsonPath("$.defendants[0].offences[0].code").value("TH68001"))
-                .andExpect(jsonPath("$.defendants[0].offences[0].title").value("Theft"))
-                .andExpect(jsonPath("$.defendants[0].offences[0].status").value("Active"));
+    @AfterEach
+    void afterEach() {
+        if (wireMockServer != null) {
+            wireMockServer.stop();
+        }
     }
 
     @Test
-    void getCaseByUrn_defaults_offence_status_to_active_when_plea_is_null() throws Exception {
-        UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000002");
-        CasefileResponse casefile = new CasefileResponse(caseId.toString(), "22SW0002", null, null,
-                List.of(new CasefileDefendant(
-                        DEF_2.toString(),
-                        new CasefileDefendant.PersonalInformation("John", "Smith"),
-                        List.of(new CasefileOffence(OFF_2.toString(), "TH68002", null, "Burglary", null))
-                )));
+    void get_case_detail_for_progression_response_should_return_ok() {
+        String cp_response = "cp_response.json";
+        String expected_amp_response = "expected_amp_response.json";
 
-        when(caseUrnMapperClient.getCaseId("22SW0002")).thenReturn(caseId);
-        when(prosecutionCasefileClient.getCaseById(caseId)).thenReturn(casefile);
-
-        mockMvc.perform(get("/prosecution-case/cases/22SW0002"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.defendants[0].offences[0].status").value("Active"));
+        stub_cp_response_and_verify_expected_amp_response(cp_response, expected_amp_response);
     }
 
     @Test
-    void getCaseByUrn_uses_plea_as_status_when_present() throws Exception {
-        UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000003");
-        CasefileResponse casefile = new CasefileResponse(caseId.toString(), "22SW0003", null, null,
-                List.of(new CasefileDefendant(
-                        DEF_3.toString(),
-                        new CasefileDefendant.PersonalInformation("Alice", "Jones"),
-                        List.of(new CasefileOffence(OFF_3.toString(), "TH68003", null, "Theft", "Guilty"))
-                )));
+    void empty_cp_response_should_return_404() throws Exception {
+        stubMappingResponse(caseUrn, caseId);
+        String expectedProsecutionUrl = String.format("%s%s/%s", appProperties.getProsecutionCasefileUrl(), appProperties.getProsecutionCasefilePath(), caseId);
 
-        when(caseUrnMapperClient.getCaseId("22SW0003")).thenReturn(caseId);
-        when(prosecutionCasefileClient.getCaseById(caseId)).thenReturn(casefile);
+        ResponseDefinitionBuilder mockResponse = aResponse()
+                .withStatus(HTTP_OK)
+                .withHeader("Content-Type", "application/json")
+                .withBody(readResourceContents("cp_empty_response.json"));
+        log.info("Stubbing prosecution response url:{}", expectedProsecutionUrl);
+        stubFor(WireMock.get(urlEqualTo(expectedProsecutionUrl)).willReturn(mockResponse));
 
-        mockMvc.perform(get("/prosecution-case/cases/22SW0003"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.defendants[0].offences[0].status").value("Guilty"));
-    }
-
-    @Test
-    void getCaseByUrn_falls_back_to_offence_wording_when_title_is_null() throws Exception {
-        UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000004");
-        CasefileResponse casefile = new CasefileResponse(caseId.toString(), "22SW0004", null, null,
-                List.of(new CasefileDefendant(
-                        DEF_4.toString(),
-                        new CasefileDefendant.PersonalInformation("Bob", "Brown"),
-                        List.of(new CasefileOffence(OFF_4.toString(), "TH68004", "Wording only", null, null))
-                )));
-
-        when(caseUrnMapperClient.getCaseId("22SW0004")).thenReturn(caseId);
-        when(prosecutionCasefileClient.getCaseById(caseId)).thenReturn(casefile);
-
-        mockMvc.perform(get("/prosecution-case/cases/22SW0004"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.defendants[0].offences[0].title").value("Wording only"));
-    }
-
-    @Test
-    void getCaseByUrn_returns_empty_defendants_when_casefile_defendants_is_null() throws Exception {
-        UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000005");
-        CasefileResponse casefile = new CasefileResponse(caseId.toString(), "22SW0005", null, null, null);
-
-        when(caseUrnMapperClient.getCaseId("22SW0005")).thenReturn(caseId);
-        when(prosecutionCasefileClient.getCaseById(caseId)).thenReturn(casefile);
-
-        mockMvc.perform(get("/prosecution-case/cases/22SW0005"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.defendants").isArray())
-                .andExpect(jsonPath("$.defendants").isEmpty());
-    }
-
-    @Test
-    void getCaseByUrn_returns_404_when_urn_mapper_client_throws_not_found() throws Exception {
-        when(caseUrnMapperClient.getCaseId("NOTFOUND"))
-                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "No mapping for URN"));
-
-        mockMvc.perform(get("/prosecution-case/cases/NOTFOUND"))
+        mockMvc.perform(get("/prosecution-case/cases/{case_urn}", caseUrn)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void bad_caseurn_should_return_404() throws Exception {
+        String expectedUrl = String.format("%s/%s", appProperties.getCaseMapperPath(), caseUrn);
+        ResponseDefinitionBuilder mockResponse = aResponse()
+                .withStatus(HTTP_NOT_FOUND)
+                .withHeader("Content-Type", "application/json");
+        log.info("Stubbing mapping url:{}", expectedUrl);
+        stubFor(WireMock.get(urlEqualTo(expectedUrl)).willReturn(mockResponse));
+
+
+        mockMvc.perform(get("/cases/{case_urn}", caseUrn)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void bad_prosecutionCasefile_response_should_return_404() throws Exception {
+        stubMappingResponse(caseUrn, caseId);
+        String expectedProsecutionUrl = String.format("%s%s/%s", appProperties.getProsecutionCasefileUrl(), appProperties.getProsecutionCasefilePath(), caseId);
+
+        ResponseDefinitionBuilder mockResponse = aResponse()
+                .withStatus(HTTP_NOT_FOUND)
+                .withHeader("Content-Type", "application/json");
+        log.info("Stubbing prosecution response url:{}", expectedProsecutionUrl);
+        stubFor(WireMock.get(urlEqualTo(expectedProsecutionUrl)).willReturn(mockResponse));
+
+        mockMvc.perform(get("/cases/{case_urn}", caseUrn)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    private void stub_cp_response_and_verify_expected_amp_response(String cp_response_file, String expected_amp_response_file) {
+        stubMappingResponse(caseUrn, caseId);
+        stubGetProgressionCaseResponse(caseId, cp_response_file);
+
+        String expectedResponse = readResourceContents(expected_amp_response_file);
+        amp_endpoint_and_verify_response(expectedResponse);
+    }
+
+    @SneakyThrows
+    private void amp_endpoint_and_verify_response(String expectedResponse) {
+        mockMvc.perform(get("/prosecution-case/cases/{case_urn}", caseUrn))
+                .andExpect(status().isOk())
+                .andExpect(content().string(expectedResponse))
+                .andReturn();
+    }
+
+    private void stubMappingResponse(String caseUrn, UUID caseId) {
+        String expectedUrl = String.format("%s/%s", appProperties.getCaseMapperPath(), caseUrn);
+        String responseBody = String.format("{\"caseUrn\":\"%s\", \"caseId\":\"%s\"}", caseUrn, caseId);
+        ResponseDefinitionBuilder mockResponse = aResponse()
+                .withStatus(HTTP_OK)
+                .withHeader("Content-Type", "application/json")
+                .withBody(responseBody);
+        log.info("Stubbing mapping url:{}", expectedUrl);
+        stubFor(WireMock.get(urlEqualTo(expectedUrl)).willReturn(mockResponse));
+    }
+
+    private void stubGetProgressionCaseResponse(UUID caseId, String filename) {
+        String expectedUrl = String.format("%s/%s", appProperties.getProsecutionCasefilePath(), caseId);
+        ResponseDefinitionBuilder mockResponse = aResponse()
+                .withStatus(HTTP_OK)
+                .withHeader("Content-Type", "application/json")
+                .withBody(readResourceContents(filename));
+        log.info("Stubbing progression url:{}", expectedUrl);
+        stubFor(WireMock.get(urlEqualTo(expectedUrl)).willReturn(mockResponse));
+    }
+
+    @SneakyThrows
+    private String readResourceContents(final String resourceName) {
+        URL resource = getClass().getClassLoader().getResource(resourceName);
+        return Files.readString(Path.of(resource.toURI()));
     }
 }

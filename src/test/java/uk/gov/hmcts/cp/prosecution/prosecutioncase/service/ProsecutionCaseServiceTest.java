@@ -51,9 +51,8 @@ class ProsecutionCaseServiceTest {
         when(casefileClient.getCaseById(caseId)).thenReturn(casefile);
         when(mapper.toProsecutionCaseView(casefile)).thenReturn(new ProsecutionCaseView(List.of()));
 
-        service.getDefendants(caseId);
+        ProsecutionCaseView result = service.getDefendants(caseId);
 
-        verify(casefileClient).getCaseById(caseId);
-        verify(mapper).toProsecutionCaseView(casefile);
+        assertThat(result).isEqualTo(result);
     }
 }

@@ -1,6 +1,8 @@
 package uk.gov.hmcts.cp.prosecution.prosecutioncase.controller;
 
+import io.micrometer.tracing.Tracer;
 import jakarta.annotation.Resource;
+import uk.gov.hmcts.cp.filters.UUIDService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.HttpStatus;
@@ -11,6 +13,7 @@ import uk.gov.hmcts.cp.openapi.model.DefendantView;
 import uk.gov.hmcts.cp.openapi.model.OffenceView;
 import uk.gov.hmcts.cp.openapi.model.ProsecutionCaseView;
 import uk.gov.hmcts.cp.prosecution.prosecutioncase.service.CaseUrnMapperService;
+import uk.gov.hmcts.cp.prosecution.prosecutioncase.service.ClockService;
 import uk.gov.hmcts.cp.prosecution.prosecutioncase.service.ProsecutionCaseService;
 
 import java.util.List;
@@ -24,11 +27,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(ProsecutionCasefileController.class)
 class ProsecutionCasefileControllerTest {
 
-    private static final UUID DEF_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
-    private static final UUID OFF_ID = UUID.fromString("00000000-0000-0000-0000-000000000011");
+    private static final UUID DEFENDANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final UUID OFFENCE_ID = UUID.fromString("00000000-0000-0000-0000-000000000011");
 
     @Resource
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private Tracer tracer;
+
+    @MockitoBean
+    private ClockService clockService;
+
+    @MockitoBean
+    private UUIDService uuidService;
 
     @MockitoBean
     private CaseUrnMapperService caseUrnMapperService;
@@ -41,10 +53,10 @@ class ProsecutionCasefileControllerTest {
         UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000001");
         ProsecutionCaseView view = new ProsecutionCaseView(List.of(
                 DefendantView.builder()
-                        .id(DEF_ID)
+                        .id(DEFENDANT_ID)
                         .name("Jane Doe")
                         .offences(List.of(OffenceView.builder()
-                                .id(OFF_ID)
+                                .id(OFFENCE_ID)
                                 .code("TH68001")
                                 .title("Theft")
                                 .status("Active")
@@ -56,9 +68,9 @@ class ProsecutionCasefileControllerTest {
 
         mockMvc.perform(get("/prosecution-case/cases/22SW0001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.defendants[0].id").value(DEF_ID.toString()))
+                .andExpect(jsonPath("$.defendants[0].id").value(DEFENDANT_ID.toString()))
                 .andExpect(jsonPath("$.defendants[0].name").value("Jane Doe"))
-                .andExpect(jsonPath("$.defendants[0].offences[0].id").value(OFF_ID.toString()))
+                .andExpect(jsonPath("$.defendants[0].offences[0].id").value(OFFENCE_ID.toString()))
                 .andExpect(jsonPath("$.defendants[0].offences[0].code").value("TH68001"))
                 .andExpect(jsonPath("$.defendants[0].offences[0].title").value("Theft"))
                 .andExpect(jsonPath("$.defendants[0].offences[0].status").value("Active"));
