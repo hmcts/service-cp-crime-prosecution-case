@@ -49,10 +49,14 @@ public class TracingFilter extends OncePerRequestFilter {
     }
 
     private String getCorrelationId(final HttpServletRequest request) {
-        if (request.getHeader(CORRELATION_ID_KEY) == null) {
+        final String existingId = request.getHeader(CORRELATION_ID_KEY);
+        final String correlationId;
+        if (existingId == null) {
             log.info("No 'X-Correlation-Id' header found. Generating Correlation ID.");
-            return uuidService.randomString();
+            correlationId = uuidService.randomString();
+        } else {
+            correlationId = existingId;
         }
-        return request.getHeader(CORRELATION_ID_KEY);
+        return correlationId;
     }
 }
