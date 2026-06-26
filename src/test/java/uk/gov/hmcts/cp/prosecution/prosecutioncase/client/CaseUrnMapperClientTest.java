@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
@@ -30,6 +31,9 @@ class CaseUrnMapperClientTest {
 
     @Mock
     private RestTemplate restTemplate;
+
+    @Captor
+    private ArgumentCaptor<HttpEntity<String>> entityCaptor;
 
     private CaseUrnMapperClient client;
 
@@ -82,11 +86,9 @@ class CaseUrnMapperClientTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void getCaseId_sends_json_accept_header() {
         UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000003");
         CaseMapperResponse body = CaseMapperResponse.builder().caseId(caseId).build();
-        ArgumentCaptor<HttpEntity<String>> entityCaptor = ArgumentCaptor.forClass(HttpEntity.class);
 
         when(appProperties.getCaseMapperUrl()).thenReturn("http://localhost:8081");
         when(appProperties.getCaseMapperPath()).thenReturn("/urnmapper");
