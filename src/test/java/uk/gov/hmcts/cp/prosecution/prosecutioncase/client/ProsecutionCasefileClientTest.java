@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
@@ -23,7 +24,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@SuppressWarnings({"unchecked", "PMD.UnitTestShouldIncludeAssert"})
 class ProsecutionCasefileClientTest {
 
     @Mock
@@ -31,6 +31,9 @@ class ProsecutionCasefileClientTest {
 
     @Mock
     private RestTemplate restTemplate;
+
+    @Captor
+    private ArgumentCaptor<HttpEntity<String>> entityCaptor;
 
     private ProsecutionCasefileClient client;
 
@@ -85,11 +88,9 @@ class ProsecutionCasefileClientTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void getCaseById_sends_correct_accept_header() {
         UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000000003");
         CasefileResponse body = new CasefileResponse(caseId.toString(), null, null, null, null);
-        ArgumentCaptor<HttpEntity<String>> entityCaptor = ArgumentCaptor.forClass(HttpEntity.class);
 
         when(appProperties.getProsecutionCasefileUrl()).thenReturn("http://localhost:8080");
         when(appProperties.getProsecutionCasefilePath()).thenReturn("/cases");
